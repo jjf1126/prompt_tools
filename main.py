@@ -526,15 +526,29 @@ class PromptToolsPlugin(Star):
             yield event.plain_result(f"⚠️ {message}")
 
     @filter.on_llm_request(priority=10)
-    async def process_llm_request(self, event: AstrMessageEvent, context: Dict[str, Any]):
+    async def process_llm_request(self, event: AstrMessageEvent, context: Any):
         """在发送给LLM前处理请求，添加提示词"""
-        system_prompt = context.get("system_prompt", "")
-        user_prompt = context.get("user_prompt", "")
-        
-        modified_system, modified_user = self.controller.process_llm_request(system_prompt, user_prompt)
-        
-        context["system_prompt"] = modified_system
-        context["user_prompt"] = modified_user
+        # 兼容处理：检查 context 是字典还是对象
+        if isinstance(context, dict):
+            # 旧版本逻辑
+            system_prompt = context.get("system_prompt", "")
+            user_prompt = context.get("user_prompt", "")
+            
+            modified_system, modified_user = self.controller.process_llm_request(system_prompt, user_prompt)
+            
+            context["system_prompt"] = modified_system
+            context["user_prompt"] = modified_user
+        else:
+            # 新版本逻辑 (ProviderRequest 对象)
+            # 使用 getattr 安全获取属性，防止属性不存在报错
+            system_prompt = getattr(context, "system_prompt", "")
+            user_prompt = getattr(context, "user_prompt", "") # 部分版本可能是 context.text
+            
+            modified_system, modified_user = self.controller.process_llm_request(system_prompt, user_prompt)
+            
+            # 设置回对象属性
+            context.system_prompt = modified_system
+            context.user_prompt = modified_user
         
         active_prompts = self.controller.get_active_prompts()
         prefix = self.controller.get_current_prefix()
@@ -558,4 +572,5 @@ class PromptToolsPlugin(Star):
 
     async def terminate(self):
         """插件停止时执行"""
+
         logger.info("Prompt Tools 插件已停止")
