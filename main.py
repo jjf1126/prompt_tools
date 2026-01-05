@@ -76,7 +76,7 @@ class PromptToolsPlugin(Star):
             yield event.plain_result(f"⚠️ {message}")
 
     @prompt_command_group.command("refresh")
-    async def refresh_prompts_cmd(self, event: AstrMessageEvent):
+    async def refresh_prompts_cmd(self, event: AstrMessageEvent, *args):
         """重新提取和加载所有提示词"""
         success, message, stats = self.controller.refresh_prompts()
         if success:
@@ -526,7 +526,7 @@ class PromptToolsPlugin(Star):
             yield event.plain_result(f"⚠️ {message}")
 
     @filter.on_llm_request(priority=10)
-    async def process_llm_request(self, event: AstrMessageEvent, context: Any):
+    async def process_llm_request(self, event: AstrMessageEvent, context: Any, *args):
         """在发送给LLM前处理请求，添加提示词"""
         # 兼容处理：检查 context 是字典还是对象
         if isinstance(context, dict):
@@ -574,3 +574,4 @@ class PromptToolsPlugin(Star):
         """插件停止时执行"""
 
         logger.info("Prompt Tools 插件已停止")
+
