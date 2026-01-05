@@ -782,8 +782,7 @@ class Controller:
             return False, f"删除组合 '{name}' 时发生内部错误"
     
     # 辅助方法
-    
-    def process_llm_request(self, system_prompt: str, user_prompt: str) -> Tuple[str, str]:
+   def process_llm_request(self, system_prompt: str, user_prompt: str) -> Tuple[str, str]:
         """
         处理LLM请求，添加前缀提示和激活的提示词
         
@@ -798,27 +797,38 @@ class Controller:
         current_prefix = self.get_current_prefix()
         
         modified_system = system_prompt
-        modified_user = user_prompt
+        modified_user = user_prompt # 用户提示词保持不变
         
-        # 添加前缀提示到system_prompt
+        # 用于收集需要添加到最前面的内容列表
+        parts_to_prepend = []
+        
+        # 1. 首先添加前缀 (优先级最高，放在最前面)
         if current_prefix:
-            if modified_system:
-                modified_system = f"{current_prefix}\n\n{modified_system}"
-            else:
-                modified_system = current_prefix
-        
-        # 添加激活的提示词到用户提示词前
-        if active_prompts:
-            active_content = ""
-            for prompt in active_prompts:
-                active_content += f"\n\n{prompt.get('content', '')}"
+            parts_to_prepend.append(current_prefix)
             
-            modified_user = f"{active_content}\n\n{modified_user}"
+        # 2. 其次添加激活的提示词 (放在前缀之后，原系统提示词之前)
+        if active_prompts:
+            for prompt in active_prompts:
+                content = prompt.get('content', '')
+                if content:
+                    parts_to_prepend.append(content)
+        
+        # 3. 将收集到的内容拼接到原 system_prompt 之前
+        if parts_to_prepend:
+            # 使用双换行符连接各个部分
+            prepend_str = "\n\n".join(parts_to_prepend)
+            
+            if modified_system:
+                modified_system = f"{prepend_str}\n\n{modified_system}"
+            else:
+                modified_system = prepend_str
         
         if active_prompts or current_prefix:
-            logger.debug(f"处理LLM请求: 添加了前缀 '{bool(current_prefix)}' 和 {len(active_prompts)} 个激活提示词到预设 '{self.current_preset_name}'")
+            logger.debug(f"处理LLM请求: 已将前缀和 {len(active_prompts)} 个激活提示词添加到系统提示词头部")
+            
         return modified_system, modified_user
     
     def terminate(self):
         """停用控制器，清理资源"""
+
         self.prompts_manager.clear_active_prompts()
