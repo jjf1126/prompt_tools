@@ -832,3 +832,4 @@ class Controller:
         """停用控制器，清理资源"""
 
         self.prompts_manager.clear_active_prompts()
+
