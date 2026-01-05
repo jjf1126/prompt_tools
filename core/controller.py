@@ -782,7 +782,7 @@ class Controller:
             return False, f"删除组合 '{name}' 时发生内部错误"
     
     # 辅助方法
-   def process_llm_request(self, system_prompt: str, user_prompt: str) -> Tuple[str, str]:
+    def process_llm_request(self, system_prompt: str, user_prompt: str) -> Tuple[str, str]:
         """
         处理LLM请求，添加前缀提示和激活的提示词
         
@@ -832,4 +832,5 @@ class Controller:
         """停用控制器，清理资源"""
 
         self.prompts_manager.clear_active_prompts()
+
 
